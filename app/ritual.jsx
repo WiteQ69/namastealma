@@ -14,6 +14,14 @@ function Icon({ name, size }) {
   return <span className="icon" dangerouslySetInnerHTML={{ __html: icon(name, size) }} />;
 }
 
+function Navigation({ activeTab, placement }) {
+  return <nav className={'tabs tabs--' + placement} aria-label="Nawigacja">
+    {tabs.map(([id, glyph, label]) => <a key={id} href={'#' + id} aria-current={activeTab === id ? 'page' : undefined}>
+      <Icon name={glyph} size={19} />{label}
+    </a>)}
+  </nav>;
+}
+
 function dateLabel(key, options = { day: 'numeric', month: 'long' }) {
   return new Intl.DateTimeFormat('pl-PL', options).format(new Date(key + 'T12:00:00'));
 }
@@ -120,6 +128,7 @@ export default function Ritual() {
   const [authError, setAuthError] = useState('');
   const dialog = useRef(null);
   const main = useRef(null);
+  const content = useRef(null);
   const lock = useRef(false);
 
   useEffect(() => {
@@ -154,6 +163,7 @@ export default function Ritual() {
   useEffect(() => {
     if (!ready) return;
     window.scrollTo(0, 0);
+    content.current?.scrollTo(0, 0);
     main.current?.focus({ preventScroll: true });
   }, [screen, ready]);
 
@@ -348,6 +358,7 @@ export default function Ritual() {
           setNotice('Wieczór zapisany w dzienniku.');
         });
       }}>{record.completed ? 'Zapisano ✓' : 'Zapisz i dobranoc'}</Cta>
+      <p className="save-status" role="status">{notice}</p>
     </>;
     if (screen === 'dziennik') return <>
       <Heading label="MOJA PRZESTRZEŃ" title="Twój dziennik" description="Wybierz dzień, by wrócić do tego, co wtedy zapisałaś." />
@@ -364,19 +375,19 @@ export default function Ritual() {
       </div>
     </div>
     <header className="site-top">
-      <a className="brand" href="#dzis"><img src="/namaste-alma.png" width="40" height="40" alt="" /><span>namaste alma<small>CHWILA DLA SIEBIE</small></span></a>
-      <button type="button" className="icon-button account" aria-label="Konto i instalacja" onClick={() => dialog.current?.showModal()}><Icon name="account" size={21} /></button>
+      <div className="site-top-inner">
+        <a className="brand" href="#dzis"><img src="/namaste-alma.png" width="40" height="40" alt="" /><span>namaste alma<small>CHWILA DLA SIEBIE</small></span></a>
+        <Navigation activeTab={activeTab} placement="desktop" />
+        <button type="button" className="icon-button account" aria-label="Konto i instalacja" onClick={() => dialog.current?.showModal()}><Icon name="account" size={21} /></button>
+      </div>
     </header>
-    <div className="desktop-layout">
-      <aside className="side"><span className="eyebrow">NAMASTE ALMA</span><p>Wracaj<br />do siebie.</p><span>Jeden dzień. Jedna chwila.</span><img src="/botanica.svg" alt="" /></aside>
-      <main className={'view ' + screen} ref={main} tabIndex={-1} aria-busy={!ready}>
+    <div className="site-content" ref={content}>
+      <main className={'view ' + screen} ref={main} tabIndex={-1} aria-busy={!ready} data-ready={ready && canOpen ? 'true' : undefined}>
         {renderScreen()}
         {error && <p className="error" role="alert">{error}</p>}
       </main>
     </div>
-    <nav className="tabs" aria-label="Nawigacja">
-      <div>{tabs.map(([id, glyph, label]) => <a key={id} href={'#' + id} aria-current={activeTab === id ? 'page' : undefined}><Icon name={glyph} size={21} />{label}</a>)}</div>
-    </nav>
+    <Navigation activeTab={activeTab} placement="mobile" />
     <dialog ref={dialog} className="settings" aria-labelledby="settings-title">
       <div className="settings-top"><h2 id="settings-title">Konto i instalacja</h2><button type="button" className="icon-button" aria-label="Zamknij" onClick={() => dialog.current?.close()}><Icon name="close" size={20} /></button></div>
       {cloudEnabled && !user && <form onSubmit={authenticate}>
@@ -392,6 +403,5 @@ export default function Ritual() {
       {!cloudEnabled && <p>Tryb demo. Wpisy zapisują się w tej przeglądarce.</p>}
       <div className="install"><strong>Dodaj ikonę na iPhonie</strong><p>Otwórz stronę w Safari i wybierz „Udostępnij”, „Dodaj do ekranu początkowego”, a potem „Otwórz jako aplikację internetową”.</p></div>
     </dialog>
-    {notice && <div className="toast" role="status">{notice}</div>}
   </div>;
 }
